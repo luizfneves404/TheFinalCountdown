@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head><title>The Final Countdown</title></head>
+<body>
+  <h1 id="display">0.00</h1>
+  <button onclick="start()">Start</button>
+  <button onclick="pause()">Pause</button>
+  <button onclick="reverse()">Reverse</button>
+  <script>
+    let time = 0;
+    let direction = 1; // 1 = up, -1 = down
+    let running = false;
+    let lastTimestamp = null;
+
+    function updateDisplay() {
+      document.getElementById('display').innerText = time.toFixed(2);
+    }
+
+    function tick(timestamp) {
+      if (running) {
+        if (lastTimestamp != null) {
+          let delta = (timestamp - lastTimestamp) / 1000;
+          time += direction * delta;
+          updateDisplay();
+        }
+        lastTimestamp = timestamp;
+        requestAnimationFrame(tick);
+      }
+    }
+
+    function start() {
+      if (!running) {
+        running = true;
+        lastTimestamp = null;
+        requestAnimationFrame(tick);
+      }
+    }
+
+    function pause() {
+      running = false;
+      lastTimestamp = null;
+    }
+
+    function reverse() {
+      direction *= -1;
+    }
+  </script>
+</body>
+</html>
