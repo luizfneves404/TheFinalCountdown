@@ -86,50 +86,91 @@
         const body = document.body;
 
         // --- TIMER STATE ---
-        let time = 0;              // The current time value in seconds
-        let initialTime = 0;       // The time set by the user, used for reset
-        let direction = 1;         // 1 for counting up, -1 for counting down
-        let running = false;       // Is the timer currently running?
-        let lastTimestamp = null;  // Timestamp from the last animation frame
-        let animationFrameId = null; // To cancel the animation frame
-        let lapCounter = 1;        // To number the laps
+        let time = 0;
+        let initialTime = 0;
+        let direction = 1;
+        let running = false;
+        let lastTimestamp = null;
+        let animationFrameId = null;
+        let laps = []; // Store laps in an array
+
+        // --- LOCALSTORAGE PERSISTENCE ---
+
+        /**
+         * Saves the current state of the timer to localStorage.
+         * Also stores a timestamp to calculate elapsed time if the page is closed while running.
+         */
+        function saveState() {
+            const state = {
+                time: time,
+                initialTime: initialTime,
+                direction: direction,
+                running: running,
+                laps: laps,
+                // If running, save the current timestamp to calculate offline progress
+                savedTimestamp: running ? Date.now() : null 
+            };
+            localStorage.setItem('ultimateTimerState', JSON.stringify(state));
+        }
+
+        /**
+         * Loads the timer state from localStorage on page load.
+         */
+        function loadState() {
+            const savedState = localStorage.getItem('ultimateTimerState');
+            if (!savedState) return;
+
+            const state = JSON.parse(savedState);
+            
+            time = state.time || 0;
+            initialTime = state.initialTime || 0;
+            direction = state.direction || 1;
+            laps = state.laps || [];
+
+            // If the timer was running when closed, calculate elapsed time
+            if (state.running && state.savedTimestamp) {
+                const timeElapsed = (Date.now() - state.savedTimestamp) / 1000;
+                time += direction * timeElapsed;
+            }
+
+            // Re-render laps
+            lapsContainer.innerHTML = '';
+            laps.forEach(lap => addLapToDOM(lap.text, lap.time));
+            
+            updateFullUI();
+
+            // If it was running, automatically restart the timer
+            if (state.running) {
+                start();
+            }
+        }
+
 
         // --- CORE TIMER LOGIC ---
 
-        /**
-         * The main "tick" function, called on every animation frame.
-         * It calculates the time delta and updates the current time.
-         */
         function tick(timestamp) {
             if (running) {
                 if (lastTimestamp != null) {
-                    // Calculate time passed in seconds since last frame
                     const delta = (timestamp - lastTimestamp) / 1000;
                     time += direction * delta;
                 }
                 lastTimestamp = timestamp;
                 updateDisplay();
 
-                // Stop if counting down and time runs out
                 if (direction === -1 && time <= 0) {
                     time = 0;
                     pause();
                     updateDisplay();
                     body.classList.add('time-up-flash');
-                    setTimeout(() => body.classList.remove('time-up-flash'), 1500); // Remove class after animation
+                    setTimeout(() => body.classList.remove('time-up-flash'), 1500);
                 }
                 
-                // Continue the loop
                 animationFrameId = requestAnimationFrame(tick);
             }
         }
 
-        // --- DISPLAY FORMATTING ---
+        // --- DISPLAY FORMATTING & UI UPDATES ---
 
-        /**
-         * Formats seconds into a MM:SS.ss string.
-         * Handles negative time for display purposes if needed.
-         */
         function formatTime(totalSeconds) {
             const isNegative = totalSeconds < 0;
             if (isNegative) totalSeconds = Math.abs(totalSeconds);
@@ -143,36 +184,23 @@
             return `${sign}${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(milliseconds).padStart(2, '0')}`;
         }
 
-        /**
-         * Updates all relevant parts of the UI with the current state.
-         */
         function updateDisplay() {
             display.innerText = formatTime(time);
-            directionLabel.innerText = direction === 1 ? 'Counting Up' : 'Counting Down';
         }
 
-        // --- CONTROL FUNCTIONS ---
-
-        function start() {
-            if (!running) {
-                running = true;
-                lastTimestamp = null; // Reset timestamp to prevent large jump
-                animationFrameId = requestAnimationFrame(tick);
-                
-                // Update button UI
+        /**
+         * Updates all parts of the UI based on the current timer state.
+         */
+        function updateFullUI() {
+            updateDisplay();
+            directionLabel.innerText = direction === 1 ? 'Counting Up' : 'Counting Down';
+            
+            if (running) {
                 startPauseBtn.innerText = 'Pause';
                 startPauseBtn.classList.remove('bg-cyan-600', 'hover:bg-cyan-500');
                 startPauseBtn.classList.add('bg-yellow-600', 'hover:bg-yellow-500');
                 lapResetBtn.innerText = 'Lap';
-            }
-        }
-
-        function pause() {
-            if (running) {
-                running = false;
-                cancelAnimationFrame(animationFrameId);
-                
-                // Update button UI
+            } else {
                 startPauseBtn.innerText = 'Start';
                 startPauseBtn.classList.remove('bg-yellow-600', 'hover:bg-yellow-500');
                 startPauseBtn.classList.add('bg-cyan-600', 'hover:bg-cyan-500');
@@ -180,51 +208,71 @@
             }
         }
 
-        function reverse() {
-            direction *= -1; // Flip the direction
-            updateDisplay();
+        // --- CONTROL FUNCTIONS ---
+
+        function start() {
+            if (!running) {
+                running = true;
+                lastTimestamp = null;
+                animationFrameId = requestAnimationFrame(tick);
+                updateFullUI();
+            }
         }
 
-        /**
-         * Resets the current time to its initial value without clearing laps.
-         */
+        function pause() {
+            if (running) {
+                running = false;
+                cancelAnimationFrame(animationFrameId);
+                updateFullUI();
+                saveState(); // Save state when paused
+            }
+        }
+
+        function reverse() {
+            direction *= -1;
+            updateFullUI();
+            saveState();
+        }
+
         function resetCurrent() {
             pause();
             time = initialTime;
-            updateDisplay();
+            updateFullUI();
+            saveState();
         }
 
-        /**
-         * Completely resets the timer, including laps and initial time.
-         */
         function resetAll() {
             pause();
             time = 0;
             initialTime = 0;
-            lapCounter = 1;
+            laps = [];
             lapsContainer.innerHTML = '';
             timeInput.value = '';
-            updateDisplay();
+            updateFullUI();
+            // Clear the saved state from storage
+            localStorage.removeItem('ultimateTimerState');
         }
         
-        function addLap() {
-            if (!running) return; // Can only add laps while running
-
-            const lapTime = formatTime(time);
-            const lapElement = document.createElement('div');
+        function addLapToDOM(lapText, lapTime) {
+             const lapElement = document.createElement('div');
             lapElement.className = 'flex justify-between items-center bg-gray-700/50 p-2 rounded-md text-sm';
             lapElement.innerHTML = `
-                <span class="font-medium text-gray-300">Lap ${lapCounter}</span>
+                <span class="font-medium text-gray-300">${lapText}</span>
                 <span class="font-mono font-semibold">${lapTime}</span>
             `;
-            lapsContainer.prepend(lapElement); // Add new laps to the top
-            lapCounter++;
+            lapsContainer.prepend(lapElement);
         }
 
-        /**
-         * Parses user input from the text field to set the timer.
-         * Supports "MM:SS" format and raw seconds.
-         */
+        function addLap() {
+            if (!running) return;
+
+            const lapTime = formatTime(time);
+            const lapText = `Lap ${laps.length + 1}`;
+            laps.push({ text: lapText, time: lapTime });
+            addLapToDOM(lapText, lapTime);
+            saveState();
+        }
+
         function handleSetTime() {
             const inputVal = timeInput.value.trim();
             if (inputVal === "") return;
@@ -237,40 +285,32 @@
                 seconds = parseFloat(inputVal) || 0;
             }
             
-            pause(); // Stop the timer before setting a new value
+            pause();
             time = seconds;
             initialTime = seconds;
-            updateDisplay();
+            updateFullUI();
+            saveState();
         }
 
         // --- EVENT LISTENERS ---
-        startPauseBtn.addEventListener('click', () => {
-            if (running) {
-                pause();
-            } else {
-                start();
-            }
-        });
-
-        lapResetBtn.addEventListener('click', () => {
-            if (running) {
-                addLap();
-            } else {
-                resetCurrent();
-            }
-        });
-        
+        startPauseBtn.addEventListener('click', () => running ? pause() : start());
+        lapResetBtn.addEventListener('click', () => running ? addLap() : resetCurrent());
         reverseBtn.addEventListener('click', reverse);
         resetAllBtn.addEventListener('click', resetAll);
         setTimeBtn.addEventListener('click', handleSetTime);
-        timeInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                handleSetTime();
+        timeInput.addEventListener('keydown', (e) => e.key === 'Enter' && handleSetTime());
+        
+        // Save state before the user leaves the page
+        window.addEventListener('beforeunload', () => {
+            // Only save if the timer has a value or has been run
+            if (time !== 0 || initialTime !== 0 || laps.length > 0) {
+                 saveState();
             }
         });
         
-        // Initialize the display on page load
-        updateDisplay();
+        // --- INITIALIZATION ---
+        // Load any saved state when the page is opened
+        loadState();
     </script>
 </body>
 </html>
