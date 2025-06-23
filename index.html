@@ -1,49 +1,276 @@
 <!DOCTYPE html>
-<html>
-<head><title>The Final Countdown</title></head>
-<body>
-  <h1 id="display">0.00</h1>
-  <button onclick="start()">Start</button>
-  <button onclick="pause()">Pause</button>
-  <button onclick="reverse()">Reverse</button>
-  <script>
-    let time = 0;
-    let direction = 1; // 1 = up, -1 = down
-    let running = false;
-    let lastTimestamp = null;
-
-    function updateDisplay() {
-      document.getElementById('display').innerText = time.toFixed(2);
-    }
-
-    function tick(timestamp) {
-      if (running) {
-        if (lastTimestamp != null) {
-          let delta = (timestamp - lastTimestamp) / 1000;
-          time += direction * delta;
-          updateDisplay();
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Ultimate Timer</title>
+    
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts for a clean look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Roboto+Mono:wght@700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Custom styles to complement Tailwind */
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
-        lastTimestamp = timestamp;
-        requestAnimationFrame(tick);
-      }
-    }
+        /* Custom class for the time-up flash effect */
+        @keyframes flash {
+            0%, 100% { background-color: #dc2626; } /* red-600 */
+            50% { background-color: inherit; }
+        }
+        .time-up-flash {
+            animation: flash 0.5s 3; /* Flash 3 times */
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white flex flex-col items-center justify-center h-full p-4 overflow-hidden">
 
-    function start() {
-      if (!running) {
-        running = true;
-        lastTimestamp = null;
-        requestAnimationFrame(tick);
-      }
-    }
+    <div class="w-full max-w-md mx-auto bg-gray-800 rounded-2xl shadow-2xl p-6 sm:p-8 space-y-6">
+        
+        <!-- Time Display -->
+        <div class="text-center">
+            <h1 id="display" class="text-6xl sm:text-7xl md:text-8xl font-bold font-mono tracking-tighter text-cyan-400">00:00.00</h1>
+            <p id="direction-label" class="mt-2 text-sm font-medium uppercase tracking-wider text-gray-400">Counting Up</p>
+        </div>
 
-    function pause() {
-      running = false;
-      lastTimestamp = null;
-    }
+        <!-- Action Buttons -->
+        <div class="grid grid-cols-2 gap-4">
+            <button id="start-pause" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3 px-4 rounded-lg transition-all duration-200 shadow-lg focus:outline-none focus:ring-4 focus:ring-cyan-500/50 text-xl">
+                Start
+            </button>
+            <button id="lap-reset" class="w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-4 rounded-lg transition-all duration-200 shadow-lg focus:outline-none focus:ring-4 focus:ring-gray-600/50 text-xl">
+                Lap
+            </button>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-4">
+             <button id="reverse" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 px-4 rounded-lg transition-all duration-200 shadow-md focus:outline-none focus:ring-4 focus:ring-indigo-500/50">
+                Reverse
+            </button>
+            <button id="reset-all" class="w-full bg-red-700 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition-all duration-200 shadow-md focus:outline-none focus:ring-4 focus:ring-red-600/50">
+                Reset All
+            </button>
+        </div>
 
-    function reverse() {
-      direction *= -1;
-    }
-  </script>
+        <!-- Set Time Input -->
+        <div class="flex items-center gap-3 pt-4 border-t border-gray-700">
+            <input type="text" id="time-input" placeholder="Set time (e.g., 5:30 or 90)" class="w-full bg-gray-700 text-white placeholder-gray-400 rounded-lg px-4 py-2 border-2 border-transparent focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent">
+            <button id="set-time" class="bg-gray-600 hover:bg-gray-500 text-white font-semibold px-5 py-2 rounded-lg transition-colors duration-200">Set</button>
+        </div>
+        
+        <!-- Laps List -->
+        <div id="laps-container" class="space-y-2 max-h-48 overflow-y-auto pr-2">
+            <!-- Lap times will be inserted here -->
+        </div>
+
+    </div>
+
+    <script>
+        // --- DOM ELEMENT REFERENCES ---
+        const display = document.getElementById('display');
+        const directionLabel = document.getElementById('direction-label');
+        const startPauseBtn = document.getElementById('start-pause');
+        const lapResetBtn = document.getElementById('lap-reset');
+        const reverseBtn = document.getElementById('reverse');
+        const resetAllBtn = document.getElementById('reset-all');
+        const timeInput = document.getElementById('time-input');
+        const setTimeBtn = document.getElementById('set-time');
+        const lapsContainer = document.getElementById('laps-container');
+        const body = document.body;
+
+        // --- TIMER STATE ---
+        let time = 0;              // The current time value in seconds
+        let initialTime = 0;       // The time set by the user, used for reset
+        let direction = 1;         // 1 for counting up, -1 for counting down
+        let running = false;       // Is the timer currently running?
+        let lastTimestamp = null;  // Timestamp from the last animation frame
+        let animationFrameId = null; // To cancel the animation frame
+        let lapCounter = 1;        // To number the laps
+
+        // --- CORE TIMER LOGIC ---
+
+        /**
+         * The main "tick" function, called on every animation frame.
+         * It calculates the time delta and updates the current time.
+         */
+        function tick(timestamp) {
+            if (running) {
+                if (lastTimestamp != null) {
+                    // Calculate time passed in seconds since last frame
+                    const delta = (timestamp - lastTimestamp) / 1000;
+                    time += direction * delta;
+                }
+                lastTimestamp = timestamp;
+                updateDisplay();
+
+                // Stop if counting down and time runs out
+                if (direction === -1 && time <= 0) {
+                    time = 0;
+                    pause();
+                    updateDisplay();
+                    body.classList.add('time-up-flash');
+                    setTimeout(() => body.classList.remove('time-up-flash'), 1500); // Remove class after animation
+                }
+                
+                // Continue the loop
+                animationFrameId = requestAnimationFrame(tick);
+            }
+        }
+
+        // --- DISPLAY FORMATTING ---
+
+        /**
+         * Formats seconds into a MM:SS.ss string.
+         * Handles negative time for display purposes if needed.
+         */
+        function formatTime(totalSeconds) {
+            const isNegative = totalSeconds < 0;
+            if (isNegative) totalSeconds = Math.abs(totalSeconds);
+
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = Math.floor(totalSeconds % 60);
+            const milliseconds = Math.floor((totalSeconds * 100) % 100);
+
+            const sign = isNegative ? "-" : "";
+            
+            return `${sign}${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(milliseconds).padStart(2, '0')}`;
+        }
+
+        /**
+         * Updates all relevant parts of the UI with the current state.
+         */
+        function updateDisplay() {
+            display.innerText = formatTime(time);
+            directionLabel.innerText = direction === 1 ? 'Counting Up' : 'Counting Down';
+        }
+
+        // --- CONTROL FUNCTIONS ---
+
+        function start() {
+            if (!running) {
+                running = true;
+                lastTimestamp = null; // Reset timestamp to prevent large jump
+                animationFrameId = requestAnimationFrame(tick);
+                
+                // Update button UI
+                startPauseBtn.innerText = 'Pause';
+                startPauseBtn.classList.remove('bg-cyan-600', 'hover:bg-cyan-500');
+                startPauseBtn.classList.add('bg-yellow-600', 'hover:bg-yellow-500');
+                lapResetBtn.innerText = 'Lap';
+            }
+        }
+
+        function pause() {
+            if (running) {
+                running = false;
+                cancelAnimationFrame(animationFrameId);
+                
+                // Update button UI
+                startPauseBtn.innerText = 'Start';
+                startPauseBtn.classList.remove('bg-yellow-600', 'hover:bg-yellow-500');
+                startPauseBtn.classList.add('bg-cyan-600', 'hover:bg-cyan-500');
+                lapResetBtn.innerText = 'Reset';
+            }
+        }
+
+        function reverse() {
+            direction *= -1; // Flip the direction
+            updateDisplay();
+        }
+
+        /**
+         * Resets the current time to its initial value without clearing laps.
+         */
+        function resetCurrent() {
+            pause();
+            time = initialTime;
+            updateDisplay();
+        }
+
+        /**
+         * Completely resets the timer, including laps and initial time.
+         */
+        function resetAll() {
+            pause();
+            time = 0;
+            initialTime = 0;
+            lapCounter = 1;
+            lapsContainer.innerHTML = '';
+            timeInput.value = '';
+            updateDisplay();
+        }
+        
+        function addLap() {
+            if (!running) return; // Can only add laps while running
+
+            const lapTime = formatTime(time);
+            const lapElement = document.createElement('div');
+            lapElement.className = 'flex justify-between items-center bg-gray-700/50 p-2 rounded-md text-sm';
+            lapElement.innerHTML = `
+                <span class="font-medium text-gray-300">Lap ${lapCounter}</span>
+                <span class="font-mono font-semibold">${lapTime}</span>
+            `;
+            lapsContainer.prepend(lapElement); // Add new laps to the top
+            lapCounter++;
+        }
+
+        /**
+         * Parses user input from the text field to set the timer.
+         * Supports "MM:SS" format and raw seconds.
+         */
+        function handleSetTime() {
+            const inputVal = timeInput.value.trim();
+            if (inputVal === "") return;
+
+            let seconds = 0;
+            if (inputVal.includes(':')) {
+                const parts = inputVal.split(':').map(Number);
+                seconds = (parts[0] || 0) * 60 + (parts[1] || 0);
+            } else {
+                seconds = parseFloat(inputVal) || 0;
+            }
+            
+            pause(); // Stop the timer before setting a new value
+            time = seconds;
+            initialTime = seconds;
+            updateDisplay();
+        }
+
+        // --- EVENT LISTENERS ---
+        startPauseBtn.addEventListener('click', () => {
+            if (running) {
+                pause();
+            } else {
+                start();
+            }
+        });
+
+        lapResetBtn.addEventListener('click', () => {
+            if (running) {
+                addLap();
+            } else {
+                resetCurrent();
+            }
+        });
+        
+        reverseBtn.addEventListener('click', reverse);
+        resetAllBtn.addEventListener('click', resetAll);
+        setTimeBtn.addEventListener('click', handleSetTime);
+        timeInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                handleSetTime();
+            }
+        });
+        
+        // Initialize the display on page load
+        updateDisplay();
+    </script>
 </body>
 </html>
