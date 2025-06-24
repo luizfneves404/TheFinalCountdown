@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Final Countdown</title>
+    <title>The Ultimate Timer (Real-Time Sync)</title>
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -160,22 +160,16 @@
             lastUpdatedTimestamp: null
         };
         let animationFrameId = null;
-        let lastTickTimestamp = null; // For local delta time calculation
+        let lastTickTimestamp = null;
 
         // --- FIREBASE INITIALIZATION ---
         async function initFirebase() {
             const firebaseConfig = {
-
                 apiKey: "AIzaSyAqzofYQQKO8IOzOuZxHhT8cerf4JcH5TU",
-
                 authDomain: "thefinalcountdown-b6dfc.firebaseapp.com",
-
                 projectId: "thefinalcountdown-b6dfc",
-
                 storageBucket: "thefinalcountdown-b6dfc.firebasestorage.app",
-
                 messagingSenderId: "694566387672",
-
                 appId: "1:694566387672:web:7aa5b12bcf21c8117f3cad"
 
             };
@@ -185,9 +179,11 @@
                 db = getFirestore(app);
                 auth = getAuth(app);
                 await signInAnonymously(auth);
+                return true; // Indicate success
             } catch (error) {
                 console.error("Firebase initialization failed:", error);
                 sessionError.textContent = "Invalid Firebase config. Please setup your project.";
+                return false; // Indicate failure
             }
         }
 
@@ -208,10 +204,15 @@
 
             if (!docSnap.exists()) {
                 sessionError.textContent = "Session not found.";
+                // NEW: If remembered session is invalid, forget it
+                localStorage.removeItem('ultimateTimerLastSessionId');
                 return;
             }
 
             currentSessionId = sessionId;
+            // NEW: Remember the session ID on this device
+            localStorage.setItem('ultimateTimerLastSessionId', currentSessionId);
+
             sessionIdDisplay.textContent = currentSessionId;
             sessionUI.classList.add('hidden');
             timerUI.classList.remove('hidden');
@@ -224,6 +225,9 @@
                 unsubscribeFromSession();
                 unsubscribeFromSession = null;
             }
+            // NEW: Forget the session when leaving
+            localStorage.removeItem('ultimateTimerLastSessionId');
+
             currentSessionId = null;
             pause();
             localState = { time: 0, initialTime: 0, direction: 1, running: false, laps: [], lastUpdatedTimestamp: null };
@@ -253,7 +257,6 @@
 
                 const serverState = docSnap.data();
 
-                // Calculate time passed since server's last update
                 if (serverState.running && serverState.lastUpdatedTimestamp) {
                     const timeElapsed = (Date.now() - serverState.lastUpdatedTimestamp) / 1000;
                     serverState.time += serverState.direction * timeElapsed;
@@ -262,7 +265,6 @@
                 localState = serverState;
                 updateFullUI();
 
-                // Manage the local animation loop based on server state
                 if (localState.running) {
                     startLocalTicker();
                 } else {
@@ -289,8 +291,8 @@
         }
 
         function startLocalTicker() {
-            if (animationFrameId) return; // Already running
-            lastTickTimestamp = null; // Reset to prevent large jump
+            if (animationFrameId) return;
+            lastTickTimestamp = null;
             animationFrameId = requestAnimationFrame(localTick);
         }
 
@@ -341,19 +343,14 @@
 
         // --- CONTROL FUNCTIONS (OPTIMISTIC UI) ---
         function handleStartPause() {
-            // Invert the running state
             localState.running = !localState.running;
             localState.lastUpdatedTimestamp = Date.now();
-
-            // Update UI and local ticker immediately
             updateFullUI();
             if (localState.running) {
                 startLocalTicker();
             } else {
                 stopLocalTicker();
             }
-
-            // Send new state to Firebase
             updateFirestoreState(currentSessionId, localState);
         }
 
@@ -377,12 +374,12 @@
         }
 
         function handleLapReset() {
-            if (localState.running) { // Add a lap
+            if (localState.running) {
                 const newLaps = [...(localState.laps || []), { text: `Lap ${(localState.laps || []).length + 1}`, time: formatTime(localState.time) }];
                 localState.laps = newLaps;
-            } else { // Reset the time
+            } else {
                 localState.time = localState.initialTime;
-                localState.laps = []; // Also clear laps on reset for simplicity
+                localState.laps = [];
             }
             localState.lastUpdatedTimestamp = Date.now();
             updateFullUI();
@@ -410,7 +407,19 @@
         timeInput.addEventListener('keydown', (e) => e.key === 'Enter' && handleSetTime());
 
         // --- INITIALIZATION ---
-        initFirebase();
+        async function main() {
+            const firebaseReady = await initFirebase();
+            if (firebaseReady) {
+                // NEW: Check for a remembered session ID in localStorage
+                const rememberedSessionId = localStorage.getItem('ultimateTimerLastSessionId');
+                if (rememberedSessionId) {
+                    joinSession(rememberedSessionId);
+                }
+            }
+        }
+
+        main();
+
     </script>
 </body>
 
