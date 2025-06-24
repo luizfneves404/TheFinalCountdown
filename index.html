@@ -14,23 +14,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Roboto+Mono:wght@700&display=swap" rel="stylesheet">
 
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            transition: background-color 0.5s ease;
-        }
-
-        /* Simple flashing animation for the alarm */
-        .alarm-active {
-            animation: alarm-flash 1s infinite;
-        }
-
-        @keyframes alarm-flash {
-            50% {
-                background-color: #b91c1c; /* red-700 */
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="./styles/main.css">
 </head>
 
 <body class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-full p-4 overflow-y-auto">
@@ -77,7 +61,6 @@
              <button id="leave-session-btn" class="w-full mt-4 bg-red-700 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg">Leave Session</button>
         </div>
 
-
         <!-- Single Timer UI (Initially Hidden) -->
         <div id="timer-ui" class="hidden bg-gray-800 rounded-2xl shadow-2xl p-6 sm:p-8 space-y-5">
             <div class="flex items-center gap-3 border-b border-gray-700 pb-3">
@@ -88,6 +71,7 @@
             <div class="text-center">
                 <h1 id="display" class="text-6xl font-bold font-mono tracking-tighter text-cyan-400">00:00:00</h1>
                 <p id="direction-label" class="mt-2 text-sm font-medium uppercase tracking-wider text-gray-400">Not Started</p>
+                <div id="alarm-status" class="mt-2 text-sm text-orange-400 opacity-0 transition-opacity duration-300"></div>
             </div>
             
             <!-- Main Controls -->
@@ -104,13 +88,33 @@
 
             <!-- Time & Alarm Settings -->
             <div class="space-y-4 pt-4 border-t border-gray-700">
-                <div class="flex items-center gap-3">
-                    <input type="text" id="time-input" placeholder="Set time (e.g., 1:30)" class="w-full bg-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500">
-                    <button id="set-time" class="bg-gray-600 hover:bg-gray-500 font-semibold px-5 py-2 rounded-lg">Set</button>
+                <!-- Time Input -->
+                <div class="space-y-2">
+                    <label class="text-sm text-gray-400">Set Timer</label>
+                    <div class="flex items-center gap-2">
+                        <input type="number" id="hours-input" min="0" max="99" placeholder="0" class="w-16 bg-gray-700 text-white text-center rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                        <span class="text-gray-400">h</span>
+                        <input type="number" id="minutes-input" min="0" max="59" placeholder="0" class="w-16 bg-gray-700 text-white text-center rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                        <span class="text-gray-400">m</span>
+                        <input type="number" id="seconds-input" min="0" max="59" placeholder="0" class="w-16 bg-gray-700 text-white text-center rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                        <span class="text-gray-400">s</span>
+                        <button id="set-time" class="bg-gray-600 hover:bg-gray-500 font-semibold px-4 py-2 rounded-lg">Set</button>
+                    </div>
                 </div>
-                 <div class="flex items-center gap-3">
-                    <input type="text" id="alarm-input" placeholder="Alarm at (e.g., 0)" class="w-full bg-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-indigo-500">
-                    <button id="set-alarm" class="bg-indigo-600 hover:bg-indigo-500 font-semibold px-5 py-2 rounded-lg">Alarm</button>
+
+                <!-- Alarm Input -->
+                <div class="space-y-2">
+                    <label class="text-sm text-gray-400">Set Alarm</label>
+                    <div class="flex items-center gap-2">
+                        <input type="number" id="alarm-hours-input" min="0" max="99" placeholder="0" class="w-16 bg-gray-700 text-white text-center rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <span class="text-gray-400">h</span>
+                        <input type="number" id="alarm-minutes-input" min="0" max="59" placeholder="0" class="w-16 bg-gray-700 text-white text-center rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <span class="text-gray-400">m</span>
+                        <input type="number" id="alarm-seconds-input" min="0" max="59" placeholder="0" class="w-16 bg-gray-700 text-white text-center rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <span class="text-gray-400">s</span>
+                        <button id="set-alarm" class="bg-indigo-600 hover:bg-indigo-500 font-semibold px-4 py-2 rounded-lg">Set</button>
+                        <button id="clear-alarm" class="bg-red-600 hover:bg-red-500 font-semibold px-3 py-2 rounded-lg">✕</button>
+                    </div>
                 </div>
             </div>
 
@@ -129,440 +133,13 @@
 
     </div>
 
-    <!-- Firebase SDK -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, onSnapshot, deleteDoc, collection, addDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    <!-- Components -->
+    <script type="module" src="/js/firebase-config.js"></script>
+    <script type="module" src="/js/utils.js"></script>
+    <script type="module" src="/js/session-manager.js"></script>
+    <script type="module" src="/js/timer-manager.js"></script>
+    <script type="module" src="/js/timer-controls.js"></script>
+    <script type="module" src="/js/app.js"></script>
 
-        // --- DOM ELEMENT REFERENCES ---
-        const sessionUI = document.getElementById('session-ui');
-        const timersListUI = document.getElementById('timers-list-ui');
-        const timerUI = document.getElementById('timer-ui');
-        
-        const createSessionBtn = document.getElementById('create-session');
-        const joinSessionBtn = document.getElementById('join-session');
-        const sessionIdInput = document.getElementById('session-id-input');
-        const sessionIdDisplay = document.getElementById('session-id-display');
-        const copySessionIdBtn = document.getElementById('copy-session-id');
-        const sessionError = document.getElementById('session-error');
-        const leaveSessionBtn = document.getElementById('leave-session-btn');
-
-        const timersListContainer = document.getElementById('timers-list-container');
-        const newTimerNameInput = document.getElementById('new-timer-name');
-        const createTimerBtn = document.getElementById('create-timer');
-
-        const backToListBtn = document.getElementById('back-to-list-btn');
-        const timerNameDisplay = document.getElementById('timer-name-display');
-        const display = document.getElementById('display');
-        const directionLabel = document.getElementById('direction-label');
-        const startPauseBtn = document.getElementById('start-pause');
-        const lapResetBtn = document.getElementById('lap-reset');
-        const reverseBtn = document.getElementById('reverse');
-        const deleteTimerBtn = document.getElementById('delete-timer');
-        const timeInput = document.getElementById('time-input');
-        const setTimeBtn = document.getElementById('set-time');
-        const alarmInput = document.getElementById('alarm-input');
-        const setAlarmBtn = document.getElementById('set-alarm');
-        const speedControls = document.getElementById('speed-controls');
-        const lapsContainer = document.getElementById('laps-container');
-
-        // --- FIREBASE & SESSION STATE ---
-        let db, auth;
-        let userId = null;
-        let currentSessionId = null;
-        let currentTimerId = null;
-        let unsubscribeFromTimersList = null;
-        let unsubscribeFromCurrentTimer = null;
-
-        // --- LOCAL TIMER STATE ---
-        let localState = {};
-        let animationFrameId = null;
-        let lastTickTimestamp = null;
-        
-        // --- FIREBASE INITIALIZATION ---
-        async function initFirebase() {
-            const firebaseConfig = {
-                apiKey: "AIzaSyAqzofYQQKO8IOzOuZxHhT8cerf4JcH5TU",
-                authDomain: "thefinalcountdown-b6dfc.firebaseapp.com",
-                projectId: "thefinalcountdown-b6dfc",
-                storageBucket: "thefinalcountdown-b6dfc.firebasestorage.app",
-                messagingSenderId: "694566387672",
-                appId: "1:694566387672:web:7aa5b12bcf21c8117f3cad"
-
-            };
-
-            try {
-                const app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        userId = user.uid;
-                        console.log("Authenticated with UID:", userId);
-                        checkRememberedSession();
-                    } else {
-                        signInAnonymously(auth).catch(error => console.error("Anonymous sign-in failed:", error));
-                    }
-                });
-
-            } catch (error) {
-                console.error("Firebase initialization failed:", error);
-                sessionError.textContent = "Firebase config is invalid.";
-            }
-        }
-
-        // --- UI NAVIGATION ---
-        function showView(view) {
-            sessionUI.classList.add('hidden');
-            timersListUI.classList.add('hidden');
-            timerUI.classList.add('hidden');
-            if (view === 'session') sessionUI.classList.remove('hidden');
-            else if (view === 'list') timersListUI.classList.remove('hidden');
-            else if (view === 'timer') timerUI.classList.remove('hidden');
-        }
-
-        // --- SESSION MANAGEMENT ---
-        async function createSession() {
-            const newSessionId = Math.random().toString(36).substring(2, 8).toUpperCase();
-            // Create a session document to mark it as existing
-            await setDoc(doc(db, "sessions", newSessionId), { createdAt: Date.now(), owner: userId });
-            await joinSession(newSessionId);
-        }
-
-        async function joinSession(sessionId) {
-            if (!sessionId || !db) return;
-            sessionError.textContent = '';
-            const sessionRef = doc(db, "sessions", sessionId);
-            const docSnap = await getDoc(sessionRef);
-
-            if (!docSnap.exists()) {
-                sessionError.textContent = "Session not found.";
-                localStorage.removeItem('syncTimerSessionId');
-                return;
-            }
-
-            currentSessionId = sessionId;
-            localStorage.setItem('syncTimerSessionId', currentSessionId);
-            sessionIdDisplay.textContent = currentSessionId;
-            showView('list');
-            listenToTimersList(sessionId);
-        }
-
-        function leaveSession() {
-            if (unsubscribeFromTimersList) unsubscribeFromTimersList();
-            if (unsubscribeFromCurrentTimer) unsubscribeFromCurrentTimer();
-            localStorage.removeItem('syncTimerSessionId');
-            currentSessionId = null;
-            currentTimerId = null;
-            stopLocalTicker();
-            showView('session');
-            document.body.classList.remove('alarm-active');
-        }
-
-        function checkRememberedSession() {
-            const rememberedSessionId = localStorage.getItem('syncTimerSessionId');
-            if (rememberedSessionId) {
-                joinSession(rememberedSessionId);
-            }
-        }
-
-        // --- TIMER LIST MANAGEMENT ---
-        function listenToTimersList(sessionId) {
-            if (unsubscribeFromTimersList) unsubscribeFromTimersList();
-            const timersCollectionRef = collection(db, "sessions", sessionId, "timers");
-            
-            unsubscribeFromTimersList = onSnapshot(timersCollectionRef, (snapshot) => {
-                timersListContainer.innerHTML = '';
-                if (snapshot.empty) {
-                     timersListContainer.innerHTML = '<p class="text-center text-gray-500">No timers yet. Create one!</p>';
-                }
-                snapshot.forEach(doc => {
-                    const timerData = doc.data();
-                    const timerElement = document.createElement('button');
-                    timerElement.className = 'w-full text-left bg-gray-700 p-3 rounded-lg hover:bg-gray-600 transition-colors';
-                    timerElement.textContent = timerData.name || 'Untitled Timer';
-                    timerElement.onclick = () => selectTimer(doc.id);
-                    timersListContainer.appendChild(timerElement);
-                });
-            });
-        }
-
-        async function handleCreateTimer() {
-            const name = newTimerNameInput.value.trim() || 'Untitled Timer';
-            if (!currentSessionId) return;
-            const timersCollectionRef = collection(db, "sessions", currentSessionId, "timers");
-            const newTimerState = {
-                name: name,
-                time: 0,
-                initialTime: 0,
-                direction: 1,
-                speed: 1,
-                running: false,
-                laps: [],
-                alarmTime: null,
-                alarmTriggered: false,
-                lastUpdatedTimestamp: Date.now()
-            };
-            await addDoc(timersCollectionRef, newTimerState);
-            newTimerNameInput.value = '';
-        }
-
-        // --- SINGLE TIMER MANAGEMENT ---
-        function selectTimer(timerId) {
-            currentTimerId = timerId;
-            showView('timer');
-            listenToCurrentTimer(currentSessionId, timerId);
-        }
-
-        function listenToCurrentTimer(sessionId, timerId) {
-            if (unsubscribeFromCurrentTimer) unsubscribeFromCurrentTimer();
-            const timerRef = doc(db, "sessions", sessionId, "timers", timerId);
-            
-            unsubscribeFromCurrentTimer = onSnapshot(timerRef, (docSnap) => {
-                 if (!docSnap.exists()) {
-                    console.log("Current timer was deleted.");
-                    showView('list');
-                    return;
-                }
-                const serverState = docSnap.data();
-
-                // Predict current time based on time since last update
-                if (serverState.running && serverState.lastUpdatedTimestamp) {
-                    const timeElapsed = (Date.now() - serverState.lastUpdatedTimestamp) / 1000;
-                    const speed = serverState.speed || 1;
-                    serverState.time += serverState.direction * speed * timeElapsed;
-                }
-
-                localState = serverState;
-                updateFullUI();
-
-                if (localState.running) startLocalTicker();
-                else stopLocalTicker();
-            });
-        }
-        
-        async function updateFirestoreState(partialState) {
-            if (!currentSessionId || !currentTimerId || !db) return;
-            const timerRef = doc(db, "sessions", currentSessionId, "timers", currentTimerId);
-            await updateDoc(timerRef, partialState);
-        }
-
-        // --- CORE TIMER LOGIC ---
-        function localTick(timestamp) {
-            if (!localState.running) {
-                stopLocalTicker();
-                return;
-            }
-            if (lastTickTimestamp) {
-                const delta = (timestamp - lastTickTimestamp) / 1000;
-                const speed = localState.speed || 1;
-                localState.time += localState.direction * speed * delta;
-                
-                // Alarm Check
-                if (localState.alarmTime !== null && !localState.alarmTriggered) {
-                    const conditionMet = (localState.direction === -1 && localState.time <= localState.alarmTime) ||
-                                         (localState.direction === 1 && localState.time >= localState.alarmTime);
-                    if (conditionMet) {
-                        localState.alarmTriggered = true;
-                        document.body.classList.add('alarm-active');
-                        updateFirestoreState({ alarmTriggered: true }); 
-                    }
-                }
-                updateDisplay();
-            }
-            lastTickTimestamp = timestamp;
-            animationFrameId = requestAnimationFrame(localTick);
-        }
-
-        function startLocalTicker() {
-            if (animationFrameId) return;
-            lastTickTimestamp = null;
-            animationFrameId = requestAnimationFrame(localTick);
-        }
-
-        function stopLocalTicker() {
-            if (animationFrameId) {
-                cancelAnimationFrame(animationFrameId);
-                animationFrameId = null;
-            }
-        }
-        
-        // --- UI & DISPLAY ---
-        function formatTime(totalSeconds) {
-            totalSeconds = typeof totalSeconds === 'number' ? totalSeconds : 0;
-            const isNegative = totalSeconds < 0;
-            if (isNegative) totalSeconds = Math.abs(totalSeconds);
-            const hours = Math.floor(totalSeconds / 3600);
-            const minutes = Math.floor((totalSeconds % 3600) / 60);
-            const seconds = Math.floor(totalSeconds % 60);
-            return `${isNegative ? '-' : ''}${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-        }
-
-        function updateDisplay() {
-            display.textContent = formatTime(localState.time);
-        }
-
-        function updateFullUI() {
-            if (!localState) return;
-            timerNameDisplay.textContent = localState.name || 'Timer';
-            updateDisplay();
-            directionLabel.textContent = localState.running ? `${localState.direction === 1 ? 'Counting Up' : 'Counting Down'} @ ${localState.speed || 1}x` : 'Paused';
-            
-            lapsContainer.innerHTML = '';
-            (localState.laps || []).forEach(lap => {
-                const lapEl = document.createElement('div');
-                lapEl.className = 'flex justify-between items-center bg-gray-700/50 p-2 rounded-md text-sm';
-                lapEl.innerHTML = `<span class="font-medium text-gray-300">${lap.text}</span><span class="font-mono font-semibold">${lap.time}</span>`;
-                lapsContainer.prepend(lapEl);
-            });
-            
-            startPauseBtn.textContent = localState.running ? 'Pause' : 'Start';
-            startPauseBtn.className = `w-full font-bold py-3 px-4 rounded-lg text-xl ${localState.running ? 'bg-yellow-600 hover:bg-yellow-500' : 'bg-cyan-600 hover:bg-cyan-500'}`;
-            lapResetBtn.textContent = localState.running ? 'Lap' : 'Reset';
-
-            // Update speed button styles
-            document.querySelectorAll('.speed-btn').forEach(btn => {
-                const speed = btn.dataset.speed;
-                if (parseInt(speed, 10) === (localState.speed || 1)) {
-                    btn.classList.add('bg-cyan-500');
-                    btn.classList.remove('bg-gray-700');
-                } else {
-                    btn.classList.remove('bg-cyan-500');
-                    btn.classList.add('bg-gray-700');
-                }
-            });
-
-            // Handle Alarm UI
-            if (localState.alarmTriggered) {
-                document.body.classList.add('alarm-active');
-            } else {
-                document.body.classList.remove('alarm-active');
-            }
-            alarmInput.value = localState.alarmTime !== null ? localState.alarmTime : '';
-
-        }
-
-        // --- CONTROL FUNCTIONS ---
-        function handleStartPause() {
-            updateFirestoreState({ 
-                running: !localState.running, 
-                lastUpdatedTimestamp: Date.now() 
-            });
-        }
-
-        function handleSetTime() {
-            const inputVal = timeInput.value.trim();
-            if (inputVal === "") return;
-            let seconds = 0;
-            if (inputVal.includes(':')) {
-                const parts = inputVal.split(':').map(Number).reverse();
-                seconds = (parts[0] || 0) + (parts[1] || 0) * 60 + (parts[2] || 0) * 3600;
-            } else {
-                seconds = parseFloat(inputVal) || 0;
-            }
-            updateFirestoreState({
-                time: seconds,
-                initialTime: seconds,
-                running: false,
-                lastUpdatedTimestamp: Date.now()
-            });
-            timeInput.value = '';
-        }
-
-        function handleLapReset() {
-            if (localState.running) { // Lap
-                const newLaps = [...(localState.laps || []), { text: `Lap ${(localState.laps || []).length + 1}`, time: formatTime(localState.time) }];
-                updateFirestoreState({ laps: newLaps });
-            } else { // Reset
-                updateFirestoreState({
-                    time: localState.initialTime || 0,
-                    laps: [],
-                    alarmTriggered: false // Also reset alarm on reset
-                });
-                 document.body.classList.remove('alarm-active');
-            }
-        }
-        
-        function handleReverse() {
-            updateFirestoreState({ 
-                direction: localState.direction * -1,
-                lastUpdatedTimestamp: Date.now() 
-            });
-        }
-
-        async function handleDeleteTimer() {
-            if (confirm(`Are you sure you want to delete "${localState.name}"?`)) {
-                if (!currentSessionId || !currentTimerId) return;
-                stopLocalTicker();
-                const timerRef = doc(db, "sessions", currentSessionId, "timers", currentTimerId);
-                await deleteDoc(timerRef);
-                unsubscribeFromCurrentTimer();
-                currentTimerId = null;
-                showView('list');
-            }
-        }
-
-        function handleSetAlarm() {
-            const value = alarmInput.value.trim();
-            const alarmValue = value === '' ? null : parseFloat(value);
-            updateFirestoreState({
-                alarmTime: alarmValue,
-                alarmTriggered: false // Reset trigger when setting new alarm
-            });
-             document.body.classList.remove('alarm-active');
-        }
-
-        function handleSetSpeed(speed) {
-             updateFirestoreState({
-                speed: speed,
-                lastUpdatedTimestamp: Date.now()
-            });
-        }
-
-
-        // --- EVENT LISTENERS ---
-        createSessionBtn.addEventListener('click', createSession);
-        joinSessionBtn.addEventListener('click', () => joinSession(sessionIdInput.value.trim().toUpperCase()));
-        sessionIdInput.addEventListener('keydown', (e) => e.key === 'Enter' && joinSession(sessionIdInput.value.trim().toUpperCase()));
-        copySessionIdBtn.addEventListener('click', () => {
-             navigator.clipboard.writeText(currentSessionId);
-             alert('Session ID copied!');
-        });
-        leaveSessionBtn.addEventListener('click', leaveSession);
-        
-        createTimerBtn.addEventListener('click', handleCreateTimer);
-        newTimerNameInput.addEventListener('keydown', (e) => e.key === 'Enter' && handleCreateTimer());
-
-        backToListBtn.addEventListener('click', () => {
-            if (unsubscribeFromCurrentTimer) unsubscribeFromCurrentTimer();
-            currentTimerId = null;
-            stopLocalTicker();
-            document.body.classList.remove('alarm-active');
-            showView('list');
-        });
-
-        startPauseBtn.addEventListener('click', handleStartPause);
-        lapResetBtn.addEventListener('click', handleLapReset);
-        reverseBtn.addEventListener('click', handleReverse);
-        deleteTimerBtn.addEventListener('click', handleDeleteTimer);
-
-        setTimeBtn.addEventListener('click', handleSetTime);
-        timeInput.addEventListener('keydown', (e) => e.key === 'Enter' && handleSetTime());
-        
-        setAlarmBtn.addEventListener('click', handleSetAlarm);
-        alarmInput.addEventListener('keydown', (e) => e.key === 'Enter' && handleSetAlarm());
-
-        speedControls.addEventListener('click', (e) => {
-            if (e.target.classList.contains('speed-btn')) {
-                handleSetSpeed(parseInt(e.target.dataset.speed, 10));
-            }
-        });
-
-        // --- INITIALIZATION ---
-        initFirebase();
-
-    </script>
 </body>
 </html>

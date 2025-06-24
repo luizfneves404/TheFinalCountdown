@@ -1,0 +1,40 @@
+body {
+    font-family: 'Inter', sans-serif;
+    transition: background-color 0.5s ease;
+}
+
+/* Simple flashing animation for the alarm */
+.alarm-active {
+    animation: alarm-flash 1s infinite;
+}
+
+@keyframes alarm-flash {
+    50% {
+        background-color: #b91c1c; /* red-700 */
+    }
+}
+
+/* Input focus styling improvements */
+input[type="number"]:focus {
+    outline: none;
+}
+
+/* Remove spinner arrows for number inputs */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+/* Smooth transitions for UI state changes */
+.opacity-0 {
+    opacity: 0;
+}
+
+.opacity-100 {
+    opacity: 1;
+} 
