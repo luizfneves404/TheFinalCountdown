@@ -1,25 +1,42 @@
 <!DOCTYPE html>
 <html lang="en" class="h-full">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Final Countdown</title>
-    
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Roboto+Mono:wght@700&display=swap" rel="stylesheet">
-    
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Roboto+Mono:wght@700&display=swap"
+        rel="stylesheet">
+
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .time-up-flash { animation: flash 0.5s 3; }
-        @keyframes flash {
-            0%, 100% { background-color: #dc2626; }
-            50% { background-color: inherit; }
+        body {
+            font-family: 'Inter', sans-serif;
         }
+
+        .time-up-flash {
+            animation: flash 0.5s 3;
+        }
+
+        @keyframes flash {
+
+            0%,
+            100% {
+                background-color: #dc2626;
+            }
+
+            50% {
+                background-color: inherit;
+            }
+        }
+
         /* Hide number input spinners */
         input[type='number']::-webkit-outer-spin-button,
         input[type='number']::-webkit-inner-spin-button {
@@ -28,7 +45,9 @@
         }
     </style>
 </head>
-<body class="bg-gray-900 text-white flex flex-col items-center justify-center h-full p-4 overflow-hidden transition-colors duration-500">
+
+<body
+    class="bg-gray-900 text-white flex flex-col items-center justify-center h-full p-4 overflow-hidden transition-colors duration-500">
 
     <div id="app-container" class="w-full max-w-md mx-auto">
 
@@ -37,55 +56,73 @@
             <h2 class="text-2xl font-bold text-center text-cyan-400">Sync Timer</h2>
             <p class="text-center text-gray-300 text-sm">Create a session to start, or join an existing one to sync.</p>
             <div>
-                <button id="create-session" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3 px-4 rounded-lg transition-all duration-200 shadow-lg text-xl">Create New Session</button>
+                <button id="create-session"
+                    class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3 px-4 rounded-lg transition-all duration-200 shadow-lg text-xl">Create
+                    New Session</button>
             </div>
             <div class="flex items-center gap-2">
-                <hr class="w-full border-gray-600"><span class="text-gray-400">OR</span><hr class="w-full border-gray-600">
+                <hr class="w-full border-gray-600"><span class="text-gray-400">OR</span>
+                <hr class="w-full border-gray-600">
             </div>
             <div class="flex items-center gap-3">
-                <input type="text" id="session-id-input" placeholder="Enter Session ID" class="w-full bg-gray-700 text-white placeholder-gray-400 rounded-lg px-4 py-2 border-2 border-transparent focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <button id="join-session" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-5 py-2 rounded-lg transition-colors duration-200">Join</button>
+                <input type="text" id="session-id-input" placeholder="Enter Session ID"
+                    class="w-full bg-gray-700 text-white placeholder-gray-400 rounded-lg px-4 py-2 border-2 border-transparent focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <button id="join-session"
+                    class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-5 py-2 rounded-lg transition-colors duration-200">Join</button>
             </div>
-             <p id="session-error" class="text-red-500 text-center text-sm h-4"></p>
+            <p id="session-error" class="text-red-500 text-center text-sm h-4"></p>
         </div>
 
         <!-- Timer UI (Initially Hidden) -->
         <div id="timer-ui" class="bg-gray-800 rounded-2xl shadow-2xl p-6 sm:p-8 space-y-6 hidden">
-            
+
             <!-- Session Info Display -->
             <div class="text-center border-b border-gray-700 pb-4">
                 <p class="text-gray-400 text-sm">Session ID:</p>
                 <div class="flex items-center justify-center gap-2">
                     <p id="session-id-display" class="text-cyan-400 font-mono text-lg"></p>
                     <button id="copy-session-id" title="Copy ID">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clipboard" viewBox="0 0 16 16">
-                          <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
-                          <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                            class="bi bi-clipboard" viewBox="0 0 16 16">
+                            <path
+                                d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z" />
+                            <path
+                                d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z" />
                         </svg>
                     </button>
                 </div>
             </div>
 
             <div class="text-center">
-                <h1 id="display" class="text-5xl sm:text-6xl font-bold font-mono tracking-tighter text-cyan-400 whitespace-nowrap">00:00:00.00</h1>
-                <p id="direction-label" class="mt-2 text-sm font-medium uppercase tracking-wider text-gray-400">Not Started</p>
+                <h1 id="display"
+                    class="text-5xl sm:text-6xl font-bold font-mono tracking-tighter text-cyan-400 whitespace-nowrap">
+                    00:00:00.00</h1>
+                <p id="direction-label" class="mt-2 text-sm font-medium uppercase tracking-wider text-gray-400">Not
+                    Started</p>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
-                <button id="start-pause" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3 px-4 rounded-lg transition-all duration-200 shadow-lg text-xl">Start</button>
-                <button id="lap-reset" class="w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-4 rounded-lg transition-all duration-200 shadow-lg text-xl">Lap</button>
+                <button id="start-pause"
+                    class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3 px-4 rounded-lg transition-all duration-200 shadow-lg text-xl">Start</button>
+                <button id="lap-reset"
+                    class="w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-4 rounded-lg transition-all duration-200 shadow-lg text-xl">Lap</button>
             </div>
-            
+
             <div class="grid grid-cols-2 gap-4">
-                 <button id="reverse" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 px-4 rounded-lg transition-all duration-200">Reverse</button>
-                 <button id="reset-all" class="w-full bg-red-700 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition-all duration-200">Reset & Leave</button>
+                <button id="reverse"
+                    class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 px-4 rounded-lg transition-all duration-200">Reverse</button>
+                <button id="reset-all"
+                    class="w-full bg-red-700 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition-all duration-200">Reset
+                    & Leave</button>
             </div>
 
             <div class="flex items-center gap-3 pt-4 border-t border-gray-700">
-                <input type="text" id="time-input" placeholder="Set time (e.g., 1:30:00)" class="w-full bg-gray-700 text-white placeholder-gray-400 rounded-lg px-4 py-2 border-2 border-transparent focus:outline-none focus:ring-2 focus:ring-cyan-500">
-                <button id="set-time" class="bg-gray-600 hover:bg-gray-500 text-white font-semibold px-5 py-2 rounded-lg">Set</button>
+                <input type="text" id="time-input" placeholder="Set time (e.g., 1:30:00)"
+                    class="w-full bg-gray-700 text-white placeholder-gray-400 rounded-lg px-4 py-2 border-2 border-transparent focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                <button id="set-time"
+                    class="bg-gray-600 hover:bg-gray-500 text-white font-semibold px-5 py-2 rounded-lg">Set</button>
             </div>
-            
+
             <div id="laps-container" class="space-y-2 max-h-48 overflow-y-auto pr-2"></div>
         </div>
     </div>
@@ -105,7 +142,7 @@
         const sessionIdDisplay = document.getElementById('session-id-display');
         const copySessionIdBtn = document.getElementById('copy-session-id');
         const sessionError = document.getElementById('session-error');
-        
+
         const display = document.getElementById('display');
         const directionLabel = document.getElementById('direction-label');
         const startPauseBtn = document.getElementById('start-pause');
@@ -121,7 +158,7 @@
         let db, auth;
         let currentSessionId = null;
         let unsubscribeFromSession = null; // To stop listening to Firestore changes
-        
+
         // --- LOCAL TIMER STATE ---
         let localState = {
             time: 0,
@@ -136,25 +173,33 @@
 
         // --- FIREBASE INITIALIZATION ---
         async function initFirebase() {
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-            const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-            
+            const firebaseConfig = {
+
+                apiKey: "AIzaSyAqzofYQQKO8IOzOuZxHhT8cerf4JcH5TU",
+
+                authDomain: "thefinalcountdown-b6dfc.firebaseapp.com",
+
+                projectId: "thefinalcountdown-b6dfc",
+
+                storageBucket: "thefinalcountdown-b6dfc.firebasestorage.app",
+
+                messagingSenderId: "694566387672",
+
+                appId: "1:694566387672:web:7aa5b12bcf21c8117f3cad"
+
+            };
             try {
                 const app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
-
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
+                // Directly sign in anonymously. The auth token is no longer needed.
+                await signInAnonymously(auth);
             } catch (error) {
                 console.error("Firebase initialization failed:", error);
                 sessionError.textContent = "Could not connect to service.";
             }
         }
-        
+
         // --- SESSION MANAGEMENT ---
         async function createSession() {
             const newSessionId = Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -173,8 +218,8 @@
         async function joinSession(sessionId) {
             if (!sessionId) return;
             sessionError.textContent = '';
-            
-            const sessionRef = doc(db, `artifacts/${typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'}/public/data/timers`, sessionId);
+
+            const sessionRef = doc(db, 'timers', sessionId);
             const docSnap = await getDoc(sessionRef);
 
             if (!docSnap.exists()) {
@@ -204,8 +249,8 @@
         }
 
         async function resetSession() {
-             if (currentSessionId) {
-                await deleteDoc(doc(db, `artifacts/${typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'}/public/data/timers`, currentSessionId));
+            if (currentSessionId) {
+                await deleteDoc(doc(db, 'timers', sessionId));
             }
             leaveSession();
         }
@@ -214,7 +259,7 @@
         function listenToSessionChanges(sessionId) {
             if (unsubscribeFromSession) unsubscribeFromSession();
 
-            const sessionRef = doc(db, `artifacts/${typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'}/public/data/timers`, sessionId);
+            const sessionRef = doc(db, 'timers', sessionId);
             unsubscribeFromSession = onSnapshot(sessionRef, (docSnap) => {
                 if (isWriting) return; // Ignore updates we triggered ourselves
 
@@ -225,7 +270,7 @@
                 }
 
                 const serverState = docSnap.data();
-                
+
                 // Calculate time passed since last update
                 if (serverState.running && serverState.lastUpdatedTimestamp) {
                     const timeElapsed = (Date.now() - serverState.lastUpdatedTimestamp) / 1000;
@@ -233,21 +278,21 @@
                 }
 
                 localState = serverState;
-                
+
                 // Stop or start local animation loop based on server state
                 cancelAnimationFrame(animationFrameId);
                 if (localState.running) {
                     animationFrameId = requestAnimationFrame(tick);
                 }
-                
+
                 updateFullUI();
             });
         }
-        
+
         async function updateFirestoreState(sessionId, state) {
             if (!sessionId) return;
             isWriting = true; // Flag that we are about to write
-            const sessionRef = doc(db, `artifacts/${typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'}/public/data/timers`, sessionId);
+            const sessionRef = doc(db, 'timers', sessionId);
             await setDoc(sessionRef, state);
             isWriting = false; // Unflag after write completes
         }
@@ -258,10 +303,10 @@
             updateDisplay();
             animationFrameId = requestAnimationFrame(tick);
         }
-        
+
         // --- UI & DISPLAY ---
         function formatTime(totalSeconds) {
-            if(typeof totalSeconds !== 'number') totalSeconds = 0;
+            if (typeof totalSeconds !== 'number') totalSeconds = 0;
             const isNegative = totalSeconds < 0;
             if (isNegative) totalSeconds = Math.abs(totalSeconds);
             const hours = Math.floor(totalSeconds / 3600);
@@ -269,7 +314,7 @@
             const seconds = Math.floor(totalSeconds % 60);
             return `${isNegative ? '-' : ''}${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
         }
-        
+
         function updateDisplay() {
             // Simplified display for less visual noise during live updates
             display.innerText = formatTime(localState.time);
@@ -278,7 +323,7 @@
         function updateFullUI() {
             updateDisplay();
             directionLabel.textContent = localState.running ? (localState.direction === 1 ? 'Counting Up' : 'Counting Down') : 'Paused';
-            
+
             lapsContainer.innerHTML = '';
             localState.laps.forEach(lap => addLapToDOM(lap.text, lap.time));
 
@@ -292,7 +337,7 @@
                 lapResetBtn.textContent = 'Reset';
             }
         }
-        
+
         function addLapToDOM(lapText, lapTime) {
             const lapElement = document.createElement('div');
             lapElement.className = 'flex justify-between items-center bg-gray-700/50 p-2 rounded-md text-sm';
@@ -310,23 +355,23 @@
 
         function pause() {
             if (localState.running) {
-                 const newState = { ...localState, running: false, lastUpdatedTimestamp: Date.now() };
+                const newState = { ...localState, running: false, lastUpdatedTimestamp: Date.now() };
                 updateFirestoreState(currentSessionId, newState);
             }
         }
-        
+
         function handleSetTime() {
-             const inputVal = timeInput.value.trim();
-             if (inputVal === "") return;
-             let seconds = 0;
-             if (inputVal.includes(':')) {
-                 const parts = inputVal.split(':').map(Number).reverse(); // SS, MM, HH
-                 seconds = (parts[0] || 0) + (parts[1] || 0) * 60 + (parts[2] || 0) * 3600;
-             } else {
-                 seconds = parseFloat(inputVal) || 0;
-             }
-             const newState = { ...localState, time: seconds, initialTime: seconds, running: false, lastUpdatedTimestamp: Date.now() };
-             updateFirestoreState(currentSessionId, newState);
+            const inputVal = timeInput.value.trim();
+            if (inputVal === "") return;
+            let seconds = 0;
+            if (inputVal.includes(':')) {
+                const parts = inputVal.split(':').map(Number).reverse(); // SS, MM, HH
+                seconds = (parts[0] || 0) + (parts[1] || 0) * 60 + (parts[2] || 0) * 3600;
+            } else {
+                seconds = parseFloat(inputVal) || 0;
+            }
+            const newState = { ...localState, time: seconds, initialTime: seconds, running: false, lastUpdatedTimestamp: Date.now() };
+            updateFirestoreState(currentSessionId, newState);
         }
 
         function resetCurrent() {
@@ -338,7 +383,7 @@
             const newState = { ...localState, direction: localState.direction * -1, lastUpdatedTimestamp: Date.now() };
             updateFirestoreState(currentSessionId, newState);
         }
-        
+
         function addLap() {
             if (!localState.running) return;
             const newLaps = [...localState.laps, { text: `Lap ${localState.laps.length + 1}`, time: formatTime(localState.time) }];
@@ -358,10 +403,11 @@
         resetAllBtn.addEventListener('click', resetSession);
         setTimeBtn.addEventListener('click', handleSetTime);
         timeInput.addEventListener('keydown', (e) => e.key === 'Enter' && handleSetTime());
-        
+
         // --- INITIALIZATION ---
         initFirebase();
 
     </script>
 </body>
+
 </html>
