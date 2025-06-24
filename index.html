@@ -5,77 +5,107 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Final Countdown</title>
     
-    <!-- Tailwind CSS for styling -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Google Fonts for a clean look -->
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Roboto+Mono:wght@700&display=swap" rel="stylesheet">
     
     <style>
-        /* Custom styles to complement Tailwind */
-        body {
-            font-family: 'Inter', sans-serif;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-        /* Custom class for the time-up flash effect */
+        body { font-family: 'Inter', sans-serif; }
+        .time-up-flash { animation: flash 0.5s 3; }
         @keyframes flash {
-            0%, 100% { background-color: #dc2626; } /* red-600 */
+            0%, 100% { background-color: #dc2626; }
             50% { background-color: inherit; }
         }
-        .time-up-flash {
-            animation: flash 0.5s 3; /* Flash 3 times */
+        /* Hide number input spinners */
+        input[type='number']::-webkit-outer-spin-button,
+        input[type='number']::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
         }
     </style>
 </head>
-<body class="bg-gray-900 text-white flex flex-col items-center justify-center h-full p-4 overflow-hidden">
+<body class="bg-gray-900 text-white flex flex-col items-center justify-center h-full p-4 overflow-hidden transition-colors duration-500">
 
-    <div class="w-full max-w-md mx-auto bg-gray-800 rounded-2xl shadow-2xl p-6 sm:p-8 space-y-6">
-        
-        <!-- Time Display -->
-        <div class="text-center">
-            <!-- Adjusted font size to prevent overflow -->
-            <h1 id="display" class="text-5xl sm:text-6xl font-bold font-mono tracking-tighter text-cyan-400 whitespace-nowrap">00:00:00.00</h1>
-            <p id="direction-label" class="mt-2 text-sm font-medium uppercase tracking-wider text-gray-400">Counting Up</p>
-        </div>
+    <div id="app-container" class="w-full max-w-md mx-auto">
 
-        <!-- Action Buttons -->
-        <div class="grid grid-cols-2 gap-4">
-            <button id="start-pause" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3 px-4 rounded-lg transition-all duration-200 shadow-lg focus:outline-none focus:ring-4 focus:ring-cyan-500/50 text-xl">
-                Start
-            </button>
-            <button id="lap-reset" class="w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-4 rounded-lg transition-all duration-200 shadow-lg focus:outline-none focus:ring-4 focus:ring-gray-600/50 text-xl">
-                Lap
-            </button>
-        </div>
-        
-        <div class="grid grid-cols-2 gap-4">
-             <button id="reverse" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 px-4 rounded-lg transition-all duration-200 shadow-md focus:outline-none focus:ring-4 focus:ring-indigo-500/50">
-                Reverse
-            </button>
-            <button id="reset-all" class="w-full bg-red-700 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition-all duration-200 shadow-md focus:outline-none focus:ring-4 focus:ring-red-600/50">
-                Reset All
-            </button>
+        <!-- Session Management UI -->
+        <div id="session-ui" class="bg-gray-800 rounded-2xl shadow-2xl p-6 space-y-4">
+            <h2 class="text-2xl font-bold text-center text-cyan-400">Sync Timer</h2>
+            <p class="text-center text-gray-300 text-sm">Create a session to start, or join an existing one to sync.</p>
+            <div>
+                <button id="create-session" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3 px-4 rounded-lg transition-all duration-200 shadow-lg text-xl">Create New Session</button>
+            </div>
+            <div class="flex items-center gap-2">
+                <hr class="w-full border-gray-600"><span class="text-gray-400">OR</span><hr class="w-full border-gray-600">
+            </div>
+            <div class="flex items-center gap-3">
+                <input type="text" id="session-id-input" placeholder="Enter Session ID" class="w-full bg-gray-700 text-white placeholder-gray-400 rounded-lg px-4 py-2 border-2 border-transparent focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <button id="join-session" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-5 py-2 rounded-lg transition-colors duration-200">Join</button>
+            </div>
+             <p id="session-error" class="text-red-500 text-center text-sm h-4"></p>
         </div>
 
-        <!-- Set Time Input -->
-        <div class="flex items-center gap-3 pt-4 border-t border-gray-700">
-            <!-- Updated placeholder text -->
-            <input type="text" id="time-input" placeholder="Set time (e.g., 1:30:00 or 5:30)" class="w-full bg-gray-700 text-white placeholder-gray-400 rounded-lg px-4 py-2 border-2 border-transparent focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent">
-            <button id="set-time" class="bg-gray-600 hover:bg-gray-500 text-white font-semibold px-5 py-2 rounded-lg transition-colors duration-200">Set</button>
-        </div>
-        
-        <!-- Laps List -->
-        <div id="laps-container" class="space-y-2 max-h-48 overflow-y-auto pr-2">
-            <!-- Lap times will be inserted here -->
-        </div>
+        <!-- Timer UI (Initially Hidden) -->
+        <div id="timer-ui" class="bg-gray-800 rounded-2xl shadow-2xl p-6 sm:p-8 space-y-6 hidden">
+            
+            <!-- Session Info Display -->
+            <div class="text-center border-b border-gray-700 pb-4">
+                <p class="text-gray-400 text-sm">Session ID:</p>
+                <div class="flex items-center justify-center gap-2">
+                    <p id="session-id-display" class="text-cyan-400 font-mono text-lg"></p>
+                    <button id="copy-session-id" title="Copy ID">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clipboard" viewBox="0 0 16 16">
+                          <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                          <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
 
+            <div class="text-center">
+                <h1 id="display" class="text-5xl sm:text-6xl font-bold font-mono tracking-tighter text-cyan-400 whitespace-nowrap">00:00:00.00</h1>
+                <p id="direction-label" class="mt-2 text-sm font-medium uppercase tracking-wider text-gray-400">Not Started</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <button id="start-pause" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3 px-4 rounded-lg transition-all duration-200 shadow-lg text-xl">Start</button>
+                <button id="lap-reset" class="w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-4 rounded-lg transition-all duration-200 shadow-lg text-xl">Lap</button>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+                 <button id="reverse" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 px-4 rounded-lg transition-all duration-200">Reverse</button>
+                 <button id="reset-all" class="w-full bg-red-700 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition-all duration-200">Reset & Leave</button>
+            </div>
+
+            <div class="flex items-center gap-3 pt-4 border-t border-gray-700">
+                <input type="text" id="time-input" placeholder="Set time (e.g., 1:30:00)" class="w-full bg-gray-700 text-white placeholder-gray-400 rounded-lg px-4 py-2 border-2 border-transparent focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                <button id="set-time" class="bg-gray-600 hover:bg-gray-500 text-white font-semibold px-5 py-2 rounded-lg">Set</button>
+            </div>
+            
+            <div id="laps-container" class="space-y-2 max-h-48 overflow-y-auto pr-2"></div>
+        </div>
     </div>
 
-    <script>
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
         // --- DOM ELEMENT REFERENCES ---
+        const sessionUI = document.getElementById('session-ui');
+        const timerUI = document.getElementById('timer-ui');
+        const createSessionBtn = document.getElementById('create-session');
+        const joinSessionBtn = document.getElementById('join-session');
+        const sessionIdInput = document.getElementById('session-id-input');
+        const sessionIdDisplay = document.getElementById('session-id-display');
+        const copySessionIdBtn = document.getElementById('copy-session-id');
+        const sessionError = document.getElementById('session-error');
+        
         const display = document.getElementById('display');
         const directionLabel = document.getElementById('direction-label');
         const startPauseBtn = document.getElementById('start-pause');
@@ -87,226 +117,251 @@
         const lapsContainer = document.getElementById('laps-container');
         const body = document.body;
 
-        // --- TIMER STATE ---
-        let time = 0;
-        let initialTime = 0;
-        let direction = 1;
-        let running = false;
-        let lastTimestamp = null;
+        // --- FIREBASE & SESSION STATE ---
+        let db, auth;
+        let currentSessionId = null;
+        let unsubscribeFromSession = null; // To stop listening to Firestore changes
+        
+        // --- LOCAL TIMER STATE ---
+        let localState = {
+            time: 0,
+            initialTime: 0,
+            direction: 1,
+            running: false,
+            laps: [],
+            lastUpdatedTimestamp: null
+        };
         let animationFrameId = null;
-        let laps = []; // Store laps in an array
+        let isWriting = false; // Prevents update loops
 
-        // --- LOCALSTORAGE PERSISTENCE ---
-
-        function saveState() {
-            const state = {
-                time: time,
-                initialTime: initialTime,
-                direction: direction,
-                running: running,
-                laps: laps,
-                savedTimestamp: running ? Date.now() : null 
-            };
-            localStorage.setItem('ultimateTimerState', JSON.stringify(state));
-        }
-
-        function loadState() {
-            const savedState = localStorage.getItem('ultimateTimerState');
-            if (!savedState) return;
-
-            const state = JSON.parse(savedState);
+        // --- FIREBASE INITIALIZATION ---
+        async function initFirebase() {
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
             
-            time = state.time || 0;
-            initialTime = state.initialTime || 0;
-            direction = state.direction || 1;
-            laps = state.laps || [];
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
 
-            if (state.running && state.savedTimestamp) {
-                const timeElapsed = (Date.now() - state.savedTimestamp) / 1000;
-                time += direction * timeElapsed;
-            }
-
-            lapsContainer.innerHTML = '';
-            laps.forEach(lap => addLapToDOM(lap.text, lap.time));
-            
-            updateFullUI();
-
-            if (state.running) {
-                start();
-            }
-        }
-
-
-        // --- CORE TIMER LOGIC ---
-
-        function tick(timestamp) {
-            if (running) {
-                if (lastTimestamp != null) {
-                    const delta = (timestamp - lastTimestamp) / 1000;
-                    time += direction * delta;
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
                 }
-                lastTimestamp = timestamp;
-                updateDisplay();
+            } catch (error) {
+                console.error("Firebase initialization failed:", error);
+                sessionError.textContent = "Could not connect to service.";
+            }
+        }
+        
+        // --- SESSION MANAGEMENT ---
+        async function createSession() {
+            const newSessionId = Math.random().toString(36).substring(2, 8).toUpperCase();
+            const initialState = {
+                time: 0,
+                initialTime: 0,
+                direction: 1,
+                running: false,
+                laps: [],
+                lastUpdatedTimestamp: Date.now()
+            };
+            await updateFirestoreState(newSessionId, initialState);
+            joinSession(newSessionId);
+        }
 
-                if (direction === -1 && time <= 0) {
-                    time = 0;
-                    pause();
-                    updateDisplay();
-                    body.classList.add('time-up-flash');
-                    setTimeout(() => body.classList.remove('time-up-flash'), 1500);
+        async function joinSession(sessionId) {
+            if (!sessionId) return;
+            sessionError.textContent = '';
+            
+            const sessionRef = doc(db, `artifacts/${typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'}/public/data/timers`, sessionId);
+            const docSnap = await getDoc(sessionRef);
+
+            if (!docSnap.exists()) {
+                sessionError.textContent = "Session not found.";
+                return;
+            }
+
+            currentSessionId = sessionId;
+            sessionIdDisplay.textContent = currentSessionId;
+            sessionUI.classList.add('hidden');
+            timerUI.classList.remove('hidden');
+
+            listenToSessionChanges(sessionId);
+        }
+
+        function leaveSession() {
+            if (unsubscribeFromSession) {
+                unsubscribeFromSession();
+                unsubscribeFromSession = null;
+            }
+            currentSessionId = null;
+            pause(); // Stop local tick
+            localState = { time: 0, initialTime: 0, direction: 1, running: false, laps: [], lastUpdatedTimestamp: null };
+            updateFullUI();
+            sessionUI.classList.remove('hidden');
+            timerUI.classList.add('hidden');
+        }
+
+        async function resetSession() {
+             if (currentSessionId) {
+                await deleteDoc(doc(db, `artifacts/${typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'}/public/data/timers`, currentSessionId));
+            }
+            leaveSession();
+        }
+
+        // --- FIRESTORE REAL-TIME SYNC ---
+        function listenToSessionChanges(sessionId) {
+            if (unsubscribeFromSession) unsubscribeFromSession();
+
+            const sessionRef = doc(db, `artifacts/${typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'}/public/data/timers`, sessionId);
+            unsubscribeFromSession = onSnapshot(sessionRef, (docSnap) => {
+                if (isWriting) return; // Ignore updates we triggered ourselves
+
+                if (!docSnap.exists()) {
+                    alert("Session was deleted by another user.");
+                    leaveSession();
+                    return;
+                }
+
+                const serverState = docSnap.data();
+                
+                // Calculate time passed since last update
+                if (serverState.running && serverState.lastUpdatedTimestamp) {
+                    const timeElapsed = (Date.now() - serverState.lastUpdatedTimestamp) / 1000;
+                    serverState.time += serverState.direction * timeElapsed;
+                }
+
+                localState = serverState;
+                
+                // Stop or start local animation loop based on server state
+                cancelAnimationFrame(animationFrameId);
+                if (localState.running) {
+                    animationFrameId = requestAnimationFrame(tick);
                 }
                 
-                animationFrameId = requestAnimationFrame(tick);
-            }
+                updateFullUI();
+            });
+        }
+        
+        async function updateFirestoreState(sessionId, state) {
+            if (!sessionId) return;
+            isWriting = true; // Flag that we are about to write
+            const sessionRef = doc(db, `artifacts/${typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'}/public/data/timers`, sessionId);
+            await setDoc(sessionRef, state);
+            isWriting = false; // Unflag after write completes
         }
 
-        // --- DISPLAY FORMATTING & UI UPDATES ---
-
-        /**
-         * UPDATED: Formats seconds into a HH:MM:SS.ss string.
-         */
+        // --- CORE TIMER LOGIC ---
+        function tick(timestamp) {
+            localState.time += localState.direction * (1000 / 60 / 1000); // Approximate delta
+            updateDisplay();
+            animationFrameId = requestAnimationFrame(tick);
+        }
+        
+        // --- UI & DISPLAY ---
         function formatTime(totalSeconds) {
+            if(typeof totalSeconds !== 'number') totalSeconds = 0;
             const isNegative = totalSeconds < 0;
             if (isNegative) totalSeconds = Math.abs(totalSeconds);
-
             const hours = Math.floor(totalSeconds / 3600);
             const minutes = Math.floor((totalSeconds % 3600) / 60);
             const seconds = Math.floor(totalSeconds % 60);
-            const milliseconds = Math.floor((totalSeconds * 100) % 100);
-
-            const sign = isNegative ? "-" : "";
-            
-            return `${sign}${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(milliseconds).padStart(2, '0')}`;
+            return `${isNegative ? '-' : ''}${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
         }
-
+        
         function updateDisplay() {
-            display.innerText = formatTime(time);
+            // Simplified display for less visual noise during live updates
+            display.innerText = formatTime(localState.time);
         }
 
         function updateFullUI() {
             updateDisplay();
-            directionLabel.innerText = direction === 1 ? 'Counting Up' : 'Counting Down';
+            directionLabel.textContent = localState.running ? (localState.direction === 1 ? 'Counting Up' : 'Counting Down') : 'Paused';
             
-            if (running) {
-                startPauseBtn.innerText = 'Pause';
-                startPauseBtn.classList.remove('bg-cyan-600', 'hover:bg-cyan-500');
-                startPauseBtn.classList.add('bg-yellow-600', 'hover:bg-yellow-500');
-                lapResetBtn.innerText = 'Lap';
+            lapsContainer.innerHTML = '';
+            localState.laps.forEach(lap => addLapToDOM(lap.text, lap.time));
+
+            if (localState.running) {
+                startPauseBtn.textContent = 'Pause';
+                startPauseBtn.className = 'w-full bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-3 px-4 rounded-lg transition-all duration-200 shadow-lg text-xl';
+                lapResetBtn.textContent = 'Lap';
             } else {
-                startPauseBtn.innerText = 'Start';
-                startPauseBtn.classList.remove('bg-yellow-600', 'hover:bg-yellow-500');
-                startPauseBtn.classList.add('bg-cyan-600', 'hover:bg-cyan-500');
-                lapResetBtn.innerText = 'Reset';
+                startPauseBtn.textContent = 'Start';
+                startPauseBtn.className = 'w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3 px-4 rounded-lg transition-all duration-200 shadow-lg text-xl';
+                lapResetBtn.textContent = 'Reset';
             }
         }
+        
+        function addLapToDOM(lapText, lapTime) {
+            const lapElement = document.createElement('div');
+            lapElement.className = 'flex justify-between items-center bg-gray-700/50 p-2 rounded-md text-sm';
+            lapElement.innerHTML = `<span class="font-medium text-gray-300">${lapText}</span><span class="font-mono font-semibold">${lapTime}</span>`;
+            lapsContainer.prepend(lapElement);
+        }
 
-        // --- CONTROL FUNCTIONS ---
-
+        // --- CONTROL FUNCTIONS (Now update Firestore) ---
         function start() {
-            if (!running) {
-                running = true;
-                lastTimestamp = null;
-                animationFrameId = requestAnimationFrame(tick);
-                updateFullUI();
+            if (!localState.running) {
+                const newState = { ...localState, running: true, lastUpdatedTimestamp: Date.now() };
+                updateFirestoreState(currentSessionId, newState);
             }
         }
 
         function pause() {
-            if (running) {
-                running = false;
-                cancelAnimationFrame(animationFrameId);
-                updateFullUI();
-                saveState();
+            if (localState.running) {
+                 const newState = { ...localState, running: false, lastUpdatedTimestamp: Date.now() };
+                updateFirestoreState(currentSessionId, newState);
             }
         }
-
-        function reverse() {
-            direction *= -1;
-            updateFullUI();
-            saveState();
+        
+        function handleSetTime() {
+             const inputVal = timeInput.value.trim();
+             if (inputVal === "") return;
+             let seconds = 0;
+             if (inputVal.includes(':')) {
+                 const parts = inputVal.split(':').map(Number).reverse(); // SS, MM, HH
+                 seconds = (parts[0] || 0) + (parts[1] || 0) * 60 + (parts[2] || 0) * 3600;
+             } else {
+                 seconds = parseFloat(inputVal) || 0;
+             }
+             const newState = { ...localState, time: seconds, initialTime: seconds, running: false, lastUpdatedTimestamp: Date.now() };
+             updateFirestoreState(currentSessionId, newState);
         }
 
         function resetCurrent() {
-            pause();
-            time = initialTime;
-            updateFullUI();
-            saveState();
+            const newState = { ...localState, time: localState.initialTime, running: false, lastUpdatedTimestamp: Date.now() };
+            updateFirestoreState(currentSessionId, newState);
         }
 
-        function resetAll() {
-            pause();
-            time = 0;
-            initialTime = 0;
-            laps = [];
-            lapsContainer.innerHTML = '';
-            timeInput.value = '';
-            updateFullUI();
-            localStorage.removeItem('ultimateTimerState');
+        function reverse() {
+            const newState = { ...localState, direction: localState.direction * -1, lastUpdatedTimestamp: Date.now() };
+            updateFirestoreState(currentSessionId, newState);
         }
         
-        function addLapToDOM(lapText, lapTime) {
-             const lapElement = document.createElement('div');
-            lapElement.className = 'flex justify-between items-center bg-gray-700/50 p-2 rounded-md text-sm';
-            lapElement.innerHTML = `
-                <span class="font-medium text-gray-300">${lapText}</span>
-                <span class="font-mono font-semibold">${lapTime}</span>
-            `;
-            lapsContainer.prepend(lapElement);
-        }
-
         function addLap() {
-            if (!running) return;
-
-            const lapTime = formatTime(time);
-            const lapText = `Lap ${laps.length + 1}`;
-            laps.push({ text: lapText, time: lapTime });
-            addLapToDOM(lapText, lapTime);
-            saveState();
-        }
-
-        /**
-         * UPDATED: Parses user input from the text field to set the timer.
-         * Supports "HH:MM:SS", "MM:SS" format, and raw seconds.
-         */
-        function handleSetTime() {
-            const inputVal = timeInput.value.trim();
-            if (inputVal === "") return;
-
-            let seconds = 0;
-            if (inputVal.includes(':')) {
-                const parts = inputVal.split(':').map(Number);
-                if (parts.length === 3) { // HH:MM:SS
-                    seconds = (parts[0] || 0) * 3600 + (parts[1] || 0) * 60 + (parts[2] || 0);
-                } else if (parts.length === 2) { // MM:SS
-                    seconds = (parts[0] || 0) * 60 + (parts[1] || 0);
-                }
-            } else {
-                seconds = parseFloat(inputVal) || 0;
-            }
-            
-            pause();
-            time = seconds;
-            initialTime = seconds;
-            updateFullUI();
-            saveState();
+            if (!localState.running) return;
+            const newLaps = [...localState.laps, { text: `Lap ${localState.laps.length + 1}`, time: formatTime(localState.time) }];
+            const newState = { ...localState, laps: newLaps, lastUpdatedTimestamp: Date.now() };
+            updateFirestoreState(currentSessionId, newState);
         }
 
         // --- EVENT LISTENERS ---
-        startPauseBtn.addEventListener('click', () => running ? pause() : start());
-        lapResetBtn.addEventListener('click', () => running ? addLap() : resetCurrent());
+        createSessionBtn.addEventListener('click', createSession);
+        joinSessionBtn.addEventListener('click', () => joinSession(sessionIdInput.value.trim().toUpperCase()));
+        sessionIdInput.addEventListener('keydown', (e) => e.key === 'Enter' && joinSession(sessionIdInput.value.trim().toUpperCase()));
+        copySessionIdBtn.addEventListener('click', () => navigator.clipboard.writeText(currentSessionId).then(() => alert('Session ID copied!')));
+
+        startPauseBtn.addEventListener('click', () => localState.running ? pause() : start());
+        lapResetBtn.addEventListener('click', () => localState.running ? addLap() : resetCurrent());
         reverseBtn.addEventListener('click', reverse);
-        resetAllBtn.addEventListener('click', resetAll);
+        resetAllBtn.addEventListener('click', resetSession);
         setTimeBtn.addEventListener('click', handleSetTime);
         timeInput.addEventListener('keydown', (e) => e.key === 'Enter' && handleSetTime());
         
-        window.addEventListener('beforeunload', () => {
-            if (time !== 0 || initialTime !== 0 || laps.length > 0) {
-                 saveState();
-            }
-        });
-        
         // --- INITIALIZATION ---
-        loadState();
+        initFirebase();
+
     </script>
 </body>
 </html>
