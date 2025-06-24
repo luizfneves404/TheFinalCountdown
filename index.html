@@ -36,7 +36,8 @@
         
         <!-- Time Display -->
         <div class="text-center">
-            <h1 id="display" class="text-6xl sm:text-7xl md:text-8xl font-bold font-mono tracking-tighter text-cyan-400">00:00.00</h1>
+            <!-- Adjusted font size to prevent overflow -->
+            <h1 id="display" class="text-5xl sm:text-6xl font-bold font-mono tracking-tighter text-cyan-400 whitespace-nowrap">00:00:00.00</h1>
             <p id="direction-label" class="mt-2 text-sm font-medium uppercase tracking-wider text-gray-400">Counting Up</p>
         </div>
 
@@ -61,7 +62,8 @@
 
         <!-- Set Time Input -->
         <div class="flex items-center gap-3 pt-4 border-t border-gray-700">
-            <input type="text" id="time-input" placeholder="Set time (e.g., 5:30 or 90)" class="w-full bg-gray-700 text-white placeholder-gray-400 rounded-lg px-4 py-2 border-2 border-transparent focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent">
+            <!-- Updated placeholder text -->
+            <input type="text" id="time-input" placeholder="Set time (e.g., 1:30:00 or 5:30)" class="w-full bg-gray-700 text-white placeholder-gray-400 rounded-lg px-4 py-2 border-2 border-transparent focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent">
             <button id="set-time" class="bg-gray-600 hover:bg-gray-500 text-white font-semibold px-5 py-2 rounded-lg transition-colors duration-200">Set</button>
         </div>
         
@@ -96,10 +98,6 @@
 
         // --- LOCALSTORAGE PERSISTENCE ---
 
-        /**
-         * Saves the current state of the timer to localStorage.
-         * Also stores a timestamp to calculate elapsed time if the page is closed while running.
-         */
         function saveState() {
             const state = {
                 time: time,
@@ -107,15 +105,11 @@
                 direction: direction,
                 running: running,
                 laps: laps,
-                // If running, save the current timestamp to calculate offline progress
                 savedTimestamp: running ? Date.now() : null 
             };
             localStorage.setItem('ultimateTimerState', JSON.stringify(state));
         }
 
-        /**
-         * Loads the timer state from localStorage on page load.
-         */
         function loadState() {
             const savedState = localStorage.getItem('ultimateTimerState');
             if (!savedState) return;
@@ -127,19 +121,16 @@
             direction = state.direction || 1;
             laps = state.laps || [];
 
-            // If the timer was running when closed, calculate elapsed time
             if (state.running && state.savedTimestamp) {
                 const timeElapsed = (Date.now() - state.savedTimestamp) / 1000;
                 time += direction * timeElapsed;
             }
 
-            // Re-render laps
             lapsContainer.innerHTML = '';
             laps.forEach(lap => addLapToDOM(lap.text, lap.time));
             
             updateFullUI();
 
-            // If it was running, automatically restart the timer
             if (state.running) {
                 start();
             }
@@ -171,26 +162,27 @@
 
         // --- DISPLAY FORMATTING & UI UPDATES ---
 
+        /**
+         * UPDATED: Formats seconds into a HH:MM:SS.ss string.
+         */
         function formatTime(totalSeconds) {
             const isNegative = totalSeconds < 0;
             if (isNegative) totalSeconds = Math.abs(totalSeconds);
 
-            const minutes = Math.floor(totalSeconds / 60);
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
             const seconds = Math.floor(totalSeconds % 60);
             const milliseconds = Math.floor((totalSeconds * 100) % 100);
 
             const sign = isNegative ? "-" : "";
             
-            return `${sign}${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(milliseconds).padStart(2, '0')}`;
+            return `${sign}${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(milliseconds).padStart(2, '0')}`;
         }
 
         function updateDisplay() {
             display.innerText = formatTime(time);
         }
 
-        /**
-         * Updates all parts of the UI based on the current timer state.
-         */
         function updateFullUI() {
             updateDisplay();
             directionLabel.innerText = direction === 1 ? 'Counting Up' : 'Counting Down';
@@ -224,7 +216,7 @@
                 running = false;
                 cancelAnimationFrame(animationFrameId);
                 updateFullUI();
-                saveState(); // Save state when paused
+                saveState();
             }
         }
 
@@ -249,7 +241,6 @@
             lapsContainer.innerHTML = '';
             timeInput.value = '';
             updateFullUI();
-            // Clear the saved state from storage
             localStorage.removeItem('ultimateTimerState');
         }
         
@@ -273,6 +264,10 @@
             saveState();
         }
 
+        /**
+         * UPDATED: Parses user input from the text field to set the timer.
+         * Supports "HH:MM:SS", "MM:SS" format, and raw seconds.
+         */
         function handleSetTime() {
             const inputVal = timeInput.value.trim();
             if (inputVal === "") return;
@@ -280,7 +275,11 @@
             let seconds = 0;
             if (inputVal.includes(':')) {
                 const parts = inputVal.split(':').map(Number);
-                seconds = (parts[0] || 0) * 60 + (parts[1] || 0);
+                if (parts.length === 3) { // HH:MM:SS
+                    seconds = (parts[0] || 0) * 3600 + (parts[1] || 0) * 60 + (parts[2] || 0);
+                } else if (parts.length === 2) { // MM:SS
+                    seconds = (parts[0] || 0) * 60 + (parts[1] || 0);
+                }
             } else {
                 seconds = parseFloat(inputVal) || 0;
             }
@@ -300,16 +299,13 @@
         setTimeBtn.addEventListener('click', handleSetTime);
         timeInput.addEventListener('keydown', (e) => e.key === 'Enter' && handleSetTime());
         
-        // Save state before the user leaves the page
         window.addEventListener('beforeunload', () => {
-            // Only save if the timer has a value or has been run
             if (time !== 0 || initialTime !== 0 || laps.length > 0) {
                  saveState();
             }
         });
         
         // --- INITIALIZATION ---
-        // Load any saved state when the page is opened
         loadState();
     </script>
 </body>
